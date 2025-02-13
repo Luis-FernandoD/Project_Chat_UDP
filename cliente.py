@@ -2,54 +2,57 @@ import socket
 import threading
 
 def main():
-    HOST = ''  # Endereço IP do Servidor (deve ser o IP do servidor ou deixar vazio para aceitar qualquer conexão)
+    HOST = ''  # Endereço IP do Servidor
     PORT = 5000  # Porta que o Servidor está
-    udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    dest = (HOST, PORT)
+    udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP no lugar de TCP
+    dest = ('localhost', PORT)  # Você deve usar o IP de destino do servidor, por exemplo, 'localhost' ou um IP real
     print('\n...Digite "eu voltarei" para sair...\n')
-    
-    username = input('Usuário> ')
+    passw = ""
 
+    # Não há necessidade de usar connect() em UDP
+    # udp.connect(dest)  # Remova isto!
+
+    username = input('Usuário> ')
     print('\nConectado')
 
+    # Inicia thread para receber mensagens
     thread1 = threading.Thread(target=recebermsg, args=(udp,))
-    thread2 = threading.Thread(target=enviarmsg, args=(udp, username))
-
     thread1.start()
 
-    print("\nDigite <Olá> para continuar")
-    passw = ""
-    while passw != 'Olá':
-        passw = input("--> ")
+    print("\nDigite <Olá> para continuar\n")
+    while True:
         if passw != 'Olá':
             print("\nSeja educado e diga Olá\n")
-    
-    thread2.start()
+            passw = input("--> ")
+        else:
+            thread2 = threading.Thread(target=enviarmsg, args=(udp, username, dest))
+            thread2.start()
+            break
 
+# Função para receber mensagens
 def recebermsg(udp):
     while True:
         try:
-            msg = udp.recv(1024).decode('utf-8')
-            print(msg + '\n')
+            msg, addr = udp.recvfrom(1024)  # Usando recvfrom() para UDP, que retorna o endereço de origem
+            print(f"Mensagem recebida de {addr}: {msg.decode('utf-8')}\n")
         except Exception as e:
-            print(f"\nErro ao receber mensagem: {e}")
+            print(f"\nErro ao receber a mensagem: {e}")
             udp.close()
             break
 
-def enviarmsg(udp, username):
+# Função para enviar mensagens
+def enviarmsg(udp, username, dest):
     while True:
         try:
             msg = input("\n")
             if msg != 'eu voltarei':
-                udp.sendto(f'<{username}> {msg}'.encode('utf-8'), udp.getpeername())
+                udp.sendto(f'<{username}> {msg}'.encode('utf-8'), dest)  # Usando sendto() para UDP
             else:
-                print("Desconectando...")
                 udp.close()
-                break
+                return
         except Exception as e:
             print(f"Ocorreu um erro: {e}")
-            udp.close()
-            break
+            return
 
-if __name__ == '__main__':
-    main()
+# Chama a função principal para rodar o programa
+main()
