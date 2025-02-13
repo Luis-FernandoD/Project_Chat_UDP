@@ -2,18 +2,12 @@ import socket
 import threading
 
 def main():
-    HOST = ''  # Endereco IP do Servidor
-    PORT = 5000  # Porta que o Servidor esta
+    HOST = ''  # Endereço IP do Servidor (deve ser o IP do servidor ou deixar vazio para aceitar qualquer conexão)
+    PORT = 5000  # Porta que o Servidor está
     udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     dest = (HOST, PORT)
     print('\n...Digite "eu voltarei" para sair...\n')
-    passw = ""
-
-    try:
-        udp.connect(dest)
-    except:
-        return print("Não foi possível estabelecer uma conexão")
-
+    
     username = input('Usuário> ')
 
     print('\nConectado')
@@ -23,39 +17,39 @@ def main():
 
     thread1.start()
 
-    print("\nDigite <Olá> para continuar\n")
-    while True:
+    print("\nDigite <Olá> para continuar")
+    passw = ""
+    while passw != 'Olá':
+        passw = input("--> ")
         if passw != 'Olá':
             print("\nSeja educado e diga Olá\n")
-            passw = input("--> ")
-        else:
-            thread2.start()
-            break
-
+    
+    thread2.start()
 
 def recebermsg(udp):
     while True:
         try:
             msg = udp.recv(1024).decode('utf-8')
             print(msg + '\n')
-        except:
-            print("\nHasta la vista")
+        except Exception as e:
+            print(f"\nErro ao receber mensagem: {e}")
             udp.close()
             break
-
 
 def enviarmsg(udp, username):
     while True:
         try:
             msg = input("\n")
             if msg != 'eu voltarei':
-                udp.send(f'<{username}> {msg}'.encode('utf-8'))
+                udp.sendto(f'<{username}> {msg}'.encode('utf-8'), udp.getpeername())
             else:
+                print("Desconectando...")
                 udp.close()
-                return
+                break
         except Exception as e:
             print(f"Ocorreu um erro: {e}")
-            return
+            udp.close()
+            break
 
-
-main()
+if __name__ == '__main__':
+    main()
